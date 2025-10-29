@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Settings - Driver Assistance System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .settings-container {
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .camera-card {
+            transition: transform 0.3s;
+            cursor: pointer;
+            height: 100%;
+        }
+        .camera-card:hover {
+            transform: translateY(-5px);
+        }
+        .camera-card.active {
+            border: 2px solid #0d6efd;
+            background-color: #e7f3ff;
+        }
+        .card-icon {
+            font-size: 2rem;
+            color: #0d6efd;
+        }
+        .username-display {
+            margin-right: 15px;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-car-alt"></i> Driver Assistance System
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-home"></i> Live View
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/camera_settings">
+                            <i class="fas fa-cog"></i> Camera Settings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fas fa-chart-line"></i> Dashboard
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <span class="username-display">
+                        <i class="fas fa-user"></i> {{ username }}
+                    </span>
+                    <a href="/logout" class="btn btn-outline-light">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="settings-container mb-4">
+            <h2><i class="fas fa-video"></i> Camera Source Selection</h2>
+            <p class="text-muted">Choose your camera source for vehicle detection.</p>
+            
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <div class="card camera-card {{ 'active' if settings.camera_source == '0' else '' }}" data-camera="0">
+                        <div class="card-body text-center">
+                            <i class="fas fa-webcam card-icon mb-3"></i>
+                            <h5 class="card-title">Built-in Webcam</h5>
+                            <p class="card-text">Use your computer's built-in webcam</p>
+                            <span class="badge bg-success">Default</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card camera-card {{ 'active' if settings.camera_source == '1' else '' }}" data-camera="1">
+                        <div class="card-body text-center">
+                            <i class="fas fa-video card-icon mb-3"></i>
+                            <h5 class="card-title">External USB Camera</h5>
+                            <p class="card-text">Use an external USB camera device</p>
+                            <span class="badge bg-primary">USB</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card camera-card" id="ipCameraCard">
+                        <div class="card-body text-center">
+                            <i class="fas fa-network-wired card-icon mb-3"></i>
+                            <h5 class="card-title">IP/Network Camera</h5>
+                            <p class="card-text">Configure an IP camera stream</p>
+                            <span class="badge bg-info">Network</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> <strong>Note:</strong> Make sure your camera is properly connected and has the necessary permissions to access the video stream.
+            </div>
+
+            <h4><i class="fas fa-camera"></i> Current Camera Source</h4>
+            <div class="input-group mb-3">
+                <span class="input-group-text"><i class="fas fa-camera"></i></span>
+                <input type="text" class="form-control" id="currentCamera" value="{{ settings.camera_source }}" readonly>
+                <button class="btn btn-outline-secondary" type="button" id="testCamera">
+                    <i class="fas fa-play"></i> Test
+                </button>
+            </div>
+            
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary btn-lg" id="saveCamera">
+                    <i class="fas fa-save"></i> Save Camera Settings
+                </button>
+            </div>
+        </div>
+        
+        <div class="settings-container">
+            <h2><i class="fas fa-sliders-h"></i> Advanced Camera Settings</h2>
+            <p class="text-muted">Configure advanced features for enhanced detection.</p>
+            
+            <form id="advancedSettings">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="nightMode" {{ 'checked' if settings.night_mode else '' }}>
+                                    <label class="form-check-label" for="nightMode">
+                                        <strong><i class="fas fa-moon"></i> Night Mode Enhancement</strong>
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Enhances image visibility in low-light conditions using histogram equalization.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="laneDepartureWarning" {{ 'checked' if settings.lane_departure_warning else '' }}>
+                                    <label class="form-check-label" for="laneDepartureWarning">
+                                        <strong><i class="fas fa-road"></i> Lane Departure Warning</strong>
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Get alerts when your vehicle drifts out of its lane.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 mt-3">
+                    <button type="button" class="btn btn-primary btn-lg" id="saveAdvanced">
+                        <i class="fas fa-save"></i> Save Advanced Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="settings-container mt-4">
+            <h2><i class="fas fa-book"></i> Camera Configuration Guide</h2>
+            
+            <div class="accordion" id="cameraGuide">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                            <i class="fas fa-webcam me-2"></i> Setting up Built-in Webcam
+                        </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#cameraGuide">
+                        <div class="accordion-body">
+                            <ol>
+                                <li>Select "Built-in Webcam" from the camera options above</li>
+                                <li>Grant camera permissions when prompted by your browser</li>
+                                <li>Click "Save Camera Settings" to apply</li>
+                                <li>Position your camera to capture the right side of your vehicle</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                            <i class="fas fa-video me-2"></i> Using External USB Camera
+                        </button>
+                    </h2>
+                    <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#cameraGuide">
+                        <div class="accordion-body">
+                            <ol>
+                                <li>Connect your USB camera to your computer</li>
+                                <li>Select "External USB Camera" from the options</li>
+                                <li>Save the settings and test the connection</li>
+                                <li>If not detected, try camera source "2" or "3" in the custom input</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                            <i class="fas fa-network-wired me-2"></i> Configuring IP Camera
+                        </button>
+                    </h2>
+                    <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#cameraGuide">
+                        <div class="accordion-body">
+                            <p><strong>Common URL formats:</strong></p>
+                            <ul>
+                                <li><code>rtsp://username:password@192.168.1.100:554/stream</code></li>
+                                <li><code>http://192.168.1.100:8080/video</code></li>
+                                <li><code>rtsp://192.168.1.100/live.sdp</code></li>
+                            </ul>
+                            <p><strong>Steps:</strong></p>
+                            <ol>
+                                <li>Find your IP camera's stream URL from its documentation</li>
+                                <li>Click on "IP/Network Camera" option</li>
+                                <li>Enter the stream URL in the modal dialog</li>
+                                <li>Save and test the connection</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- IP Camera Modal -->
+    <div class="modal fade" id="ipCameraModal" tabindex="-1" aria-labelledby="ipCameraModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ipCameraModalLabel">
+                        <i class="fas fa-network-wired"></i> IP Camera Configuration
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="ipCameraUrl" class="form-label">
+                            <i class="fas fa-link"></i> Camera Stream URL
+                        </label>
+                        <input type="text" class="form-control" id="ipCameraUrl" 
+                               placeholder="rtsp://username:password@192.168.1.100:554/stream">
+                        <small class="form-text text-muted">
+                            Enter the RTSP or HTTP stream URL for your IP camera.
+                        </small>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> <strong>Security Note:</strong> 
+                        Ensure your camera stream is on a secure network. Avoid using default passwords.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" id="saveIpCamera">
+                        <i class="fas fa-plus"></i> Add Camera
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white text-center py-3 mt-5">
+        <div class="container">
+            <p class="mb-0"><i class="fas fa-shield-alt"></i> Driver Assistance System &copy; 2025</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize modal
+        var ipCameraModal = new bootstrap.Modal(document.getElementById('ipCameraModal'));
+        
+        // Handle camera card selection
+        document.querySelectorAll('.camera-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const cameraValue = this.getAttribute('data-camera');
+                
+                // If this is the IP camera card, show modal
+                if (this.id === 'ipCameraCard') {
+                    ipCameraModal.show();
+                    return;
+                }
+                
+                // Remove active class from all cards
+                document.querySelectorAll('.camera-card').forEach(c => {
+                    c.classList.remove('active');
+                });
+                
+                // Add active class to selected card
+                this.classList.add('active');
+                
+                // Update current camera input
+                if (cameraValue) {
+                    document.getElementById('currentCamera').value = cameraValue;
+                }
+            });
+        });
+        
+        // Handle IP camera save
+        document.getElementById('saveIpCamera').addEventListener('click', function() {
+            const url = document.getElementById('ipCameraUrl').value.trim();
+            
+            if (!url) {
+                alert('Please enter a valid camera URL');
+                return;
+            }
+            
+            // Validate URL format
+            if (!url.startsWith('rtsp://') && !url.startsWith('http://') && !url.startsWith('https://')) {
+                alert('URL must start with rtsp://, http://, or https://');
+                return;
+            }
+            
+            // Remove active class from all cards
+            document.querySelectorAll('.camera-card').forEach(c => {
+                c.classList.remove('active');
+            });
+            
+            // Add active class to IP camera card
+            document.getElementById('ipCameraCard').classList.add('active');
+            
+            // Update current camera input
+            document.getElementById('currentCamera').value = url;
+            
+            // Close modal
+            ipCameraModal.hide();
+            
+            // Clear input for next time
+            document.getElementById('ipCameraUrl').value = '';
+        });
+        
+        // Handle camera settings save
+        document.getElementById('saveCamera').addEventListener('click', function() {
+            const cameraSource = document.getElementById('currentCamera').value;
+            
+            if (!cameraSource) {
+                alert('Please select a camera source');
+                return;
+            }
+            
+            // Show loading state
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            
+            fetch('/update_settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    camera_source: cameraSource
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    alert('Camera settings saved successfully! The new camera will be active when you return to the Live View.');
+                    this.innerHTML = '<i class="fas fa-check"></i> Saved!';
+                    setTimeout(() => {
+                        this.innerHTML = '<i class="fas fa-save"></i> Save Camera Settings';
+                        this.disabled = false;
+                    }, 2000);
+                } else {
+                    alert('Error saving camera settings: ' + data.message);
+                    this.innerHTML = '<i class="fas fa-save"></i> Save Camera Settings';
+                    this.disabled = false;
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('Error saving camera settings!');
+                this.innerHTML = '<i class="fas fa-save"></i> Save Camera Settings';
+                this.disabled = false;
+            });
+        });
+        
+        // Handle test camera button
+        document.getElementById('testCamera').addEventListener('click', function() {
+            alert('Camera test will be available in the Live View. Please save settings and navigate to Live View to test.');
+        });
+        
+        // Handle advanced settings save
+        document.getElementById('saveAdvanced').addEventListener('click', function() {
+            const laneDepartureWarning = document.getElementById('laneDepartureWarning').checked;
+            const nightMode = document.getElementById('nightMode').checked;
+            
+            // Show loading state
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            
+            fetch('/update_settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    lane_departure_warning: laneDepartureWarning,
+                    night_mode: nightMode
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    alert('Advanced settings saved successfully!');
+                    this.innerHTML = '<i class="fas fa-check"></i> Saved!';
+                    setTimeout(() => {
+                        this.innerHTML = '<i class="fas fa-save"></i> Save Advanced Settings';
+                        this.disabled = false;
+                    }, 2000);
+                } else {
+                    alert('Error saving advanced settings: ' + data.message);
+                    this.innerHTML = '<i class="fas fa-save"></i> Save Advanced Settings';
+                    this.disabled = false;
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('Error saving advanced settings!');
+                this.innerHTML = '<i class="fas fa-save"></i> Save Advanced Settings';
+                this.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>
