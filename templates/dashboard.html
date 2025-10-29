@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Driver Assistance System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .dashboard-container {
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .stat-card {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .alert-item {
+            border-left: 4px solid #dc3545;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+        }
+        .alert-time {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        .alert-distance {
+            font-weight: bold;
+            color: #dc3545;
+        }
+        .alert-type {
+            font-weight: bold;
+        }
+        .alert-image {
+            width: 100%;
+            max-height: 150px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .username-display {
+            margin-right: 15px;
+            color: #fff;
+        }
+        .chart-container {
+            height: 300px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">Driver Assistance System</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Live View</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/camera_settings">Camera Settings</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/dashboard">Dashboard</a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <span class="username-display">Welcome, {{ username }}</span>
+                    <a href="/logout" class="btn btn-outline-light">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="dashboard-container mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Safety Statistics</h2>
+                <a href="/reset_stats" class="btn btn-outline-secondary">
+                    <i class="fas fa-redo"></i> Reset Stats
+                </a>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <i class="fas fa-bell stat-icon text-warning"></i>
+                        <h4>Total Detections</h4>
+                        <div class="stat-value">{{ stats.detections }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <i class="fas fa-exclamation-triangle stat-icon text-danger"></i>
+                        <h4>Close Calls</h4>
+                        <div class="stat-value">{{ stats.close_calls }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <i class="fas fa-tachometer-alt stat-icon text-primary"></i>
+                        <h4>Avg Distance</h4>
+                        <div class="stat-value">{{ "%.2f"|format(avg_distance) }}m</div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <i class="fas fa-shield-alt stat-icon text-success"></i>
+                        <h4>Safety Score</h4>
+                        <div class="stat-value">
+                            {% if stats.close_calls > 0 and stats.detections > 0 %}
+                                {{ (100 - (stats.close_calls / stats.detections * 100))|round|int }}%
+                            {% else %}
+                                100%
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="dashboard-container">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2>Alert Logs</h2>
+                        <a href="/clear_logs" class="btn btn-outline-secondary">
+                            <i class="fas fa-trash"></i> Clear Logs
+                        </a>
+                    </div>
+                    
+                    {% if alerts %}
+                        <div class="alert-list">
+                            {% for alert in alerts|reverse %}
+                                <div class="alert-item">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <div class="alert-time">{{ alert.timestamp }}</div>
+                                            <div>
+                                                <span class="alert-type">{{ alert.type }}</span> detected at 
+                                                <span class="alert-distance">{{ alert.distance }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            {% if alert.image %}
+                                                <img src="{{ alert.image }}" class="alert-image" alt="Alert capture">
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+                            <h4 class="mt-3">No alerts recorded</h4>
+                            <p class="text-muted">Safe driving! No close calls have been detected.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="dashboard-container">
+                    <h2>Detection Types</h2>
+                    
+                    <div class="chart-container mb-4">
+                        <canvas id="detectionChart"></canvas>
+                    </div>
+                    
+                    <h2>Safety Tips</h2>
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i> 
+                            Maintain at least 3 second following distance
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i> 
+                            Always check blind spots before changing lanes
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i> 
+                            Avoid distractions while driving
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i> 
+                            Adjust camera position for optimal detection
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white text-center py-3 mt-5">
+        <div class="container">
+            <p class="mb-0">Driver Assistance System &copy; 2025</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        // Sample data for the chart - in a real app, this would come from backend
+        const detectionTypes = {
+            'car': {{ alerts|selectattr('type', 'equalto', 'car')|list|length }},
+            'truck': {{ alerts|selectattr('type', 'equalto', 'truck')|list|length }},
+            'motorcycle': {{ alerts|selectattr('type', 'equalto', 'motorcycle')|list|length }},
+            'bicycle': {{ alerts|selectattr('type', 'equalto', 'bicycle')|list|length }},
+            'person': {{ alerts|selectattr('type', 'equalto', 'person')|list|length }},
+            'bus': {{ alerts|selectattr('type', 'equalto', 'bus')|list|length }}
+        };
+        
+        // Create chart
+        const ctx = document.getElementById('detectionChart').getContext('2d');
+        const detectionChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(detectionTypes),
+                datasets: [{
+                    data: Object.values(detectionTypes),
+                    backgroundColor: [
+                        '#0d6efd',
+                        '#dc3545',
+                        '#fd7e14',
+                        '#20c997',
+                        '#6f42c1',
+                        '#ffc107'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
