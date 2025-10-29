@@ -1,13 +1,4 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2865
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 .AppleSystemUIFontMonospaced-Regular;}
-{\colortbl;\red255\green255\blue255;\red249\green248\blue242;\red36\green36\blue35;}
-{\*\expandedcolortbl;;\cssrgb\c98039\c97647\c96078;\cssrgb\c18824\c18824\c18039;}
-\paperw11900\paperh16840\margl1440\margr1440\vieww28600\viewh18000\viewkind0
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
-
-\f0\fs24 \cf0 v
-\f1 \cf2 \cb3 \expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 from flask import Flask, render_template, Response, request, redirect, url_for, session, jsonify\
+from flask import Flask, render_template, Response, request, redirect, url_for, session, jsonify\
 \pard\pardeftab720\partightenfactor0
 \cf2 import cv2\
 import torch\
