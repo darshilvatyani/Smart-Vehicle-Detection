@@ -1,1 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Assistance System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .video-container {
+            position: relative;
+            width: 100%;
+            margin: 0 auto;
+            overflow: hidden;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        #videoFeed {
+            width: 100%;
+        }
+        .controls {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .btn-toggle {
+            min-width: 120px;
+            margin: 5px;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .settings-panel {
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .username-display {
+            margin-right: 15px;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">Driver Assistance System</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">Live View</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/camera_settings">Camera Settings</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">Dashboard</a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <span class="username-display">Welcome, {{ username }}</span>
+                    <a href="/logout" class="btn btn-outline-light">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
 
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="video-container mb-4">
+                    <img id="videoFeed" src="{{ url_for('video_feed') }}" alt="Video Feed">
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="controls mb-4">
+                    <h4>Quick Controls</h4>
+                    <div class="d-flex flex-wrap justify-content-around">
+                        <a href="{{ url_for('toggle_audio') }}" class="btn btn-toggle {{ 'btn-success' if settings.audio_enabled else 'btn-outline-danger' }}">
+                            <i class="fas {{ 'fa-volume-up' if settings.audio_enabled else 'fa-volume-mute' }}"></i> 
+                            {{ 'Mute' if settings.audio_enabled else 'Unmute' }}
+                        </a>
+                        <a href="{{ url_for('toggle_night_mode') }}" class="btn btn-toggle {{ 'btn-success' if settings.night_mode else 'btn-outline-secondary' }}">
+                            <i class="fas {{ 'fa-moon' if settings.night_mode else 'fa-sun' }}"></i> 
+                            {{ 'Day Mode' if settings.night_mode else 'Night Mode' }}
+                        </a>
+                    </div>
+                </div>
+
+                <div class="settings-panel">
+                    <h4>Alert Settings</h4>
+                    <form id="settingsForm">
+                        <div class="mb-3">
+                            <label for="distanceThreshold" class="form-label">Alert Distance (meters)</label>
+                            <input type="range" class="form-range" id="distanceThreshold" min="1" max="15" step="0.5" value="{{ settings.distance_threshold }}">
+                            <div class="d-flex justify-content-between">
+                                <span>1m</span>
+                                <span id="distanceValue">{{ settings.distance_threshold }}m</span>
+                                <span>15m</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="closeCallThreshold" class="form-label">Close Call Threshold (meters)</label>
+                            <input type="range" class="form-range" id="closeCallThreshold" min="0.5" max="5" step="0.1" value="{{ settings.close_call_threshold }}">
+                            <div class="d-flex justify-content-between">
+                                <span>0.5m</span>
+                                <span id="closeCallValue">{{ settings.close_call_threshold }}m</span>
+                                <span>5m</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="alertInterval" class="form-label">Alert Interval (seconds)</label>
+                            <input type="range" class="form-range" id="alertInterval" min="1" max="15" step="1" value="{{ settings.alert_interval }}">
+                            <div class="d-flex justify-content-between">
+                                <span>1s</span>
+                                <span id="intervalValue">{{ settings.alert_interval }}s</span>
+                                <span>15s</span>
+                            </div>
+                        </div>
+                        
+                        <button type="button" class="btn btn-primary w-100" id="saveSettings">Save Settings</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white text-center py-3 mt-5">
+        <div class="container">
+            <p class="mb-0">Driver Assistance System &copy; 2025</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Update displayed values when sliders change
+        document.getElementById('distanceThreshold').addEventListener('input', function() {
+            document.getElementById('distanceValue').textContent = this.value + 'm';
+        });
+        
+        document.getElementById('closeCallThreshold').addEventListener('input', function() {
+            document.getElementById('closeCallValue').textContent = this.value + 'm';
+        });
+        
+        document.getElementById('alertInterval').addEventListener('input', function() {
+            document.getElementById('intervalValue').textContent = this.value + 's';
+        });
+        
+        // Send settings to server
+        document.getElementById('saveSettings').addEventListener('click', function() {
+            const settings = {
+                distance_threshold: parseFloat(document.getElementById('distanceThreshold').value),
+                close_call_threshold: parseFloat(document.getElementById('closeCallThreshold').value),
+                alert_interval: parseInt(document.getElementById('alertInterval').value)
+            };
+            
+            fetch('/update_settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(settings)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    alert('Settings saved successfully!');
+                } else {
+                    alert('Error saving settings: ' + data.message);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('Error saving settings!');
+            });
+        });
+    </script>
+</body>
+</html>
